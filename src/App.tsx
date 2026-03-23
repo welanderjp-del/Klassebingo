@@ -269,9 +269,9 @@ export default function App() {
       <main className="flex-1 flex flex-col p-4 gap-4 min-h-0 overflow-hidden print:hidden">
         
         {/* Top Section: Display & Controls */}
-        <div className="flex items-center justify-between gap-8 px-4 shrink-0">
+        <div className="grid grid-cols-3 items-center px-4 shrink-0 h-28">
           {/* Left: Draw & Previous */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 justify-self-start">
             <button
               onClick={drawNumber}
               className="py-3 px-8 min-w-[160px] rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
@@ -280,28 +280,34 @@ export default function App() {
               {isAnimating ? <X size={20} /> : <Play size={20} />}
               {isAnimating ? "Stop" : "Træk tal"}
             </button>
-            <div className="flex flex-col leading-tight">
+            <div className="flex flex-col leading-tight w-16">
               <span className="text-[10px] uppercase font-bold opacity-40">Forrige</span>
-              <div className="text-2xl font-mono font-bold opacity-80">
+              <div className="text-2xl font-mono font-bold opacity-80 truncate">
                 {getDisplayValue(previousNumber)}
               </div>
             </div>
           </div>
 
           {/* Middle: Current Large Display */}
-          <div className="flex-1 flex justify-center">
-            <motion.div 
-              key={currentNumber}
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="text-7xl font-black font-mono tracking-tighter"
-            >
-              {getDisplayValue(currentNumber)}
-            </motion.div>
+          <div className="flex justify-center items-center h-full">
+            <div className="min-w-[120px] flex justify-center">
+              <AnimatePresence mode="wait">
+                <motion.div 
+                  key={currentNumber + (gameMode)}
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -10, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-7xl font-black font-mono tracking-tighter"
+                >
+                  {getDisplayValue(currentNumber)}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* Right: Undo & Reset */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 justify-self-end">
             <button
               onClick={undoLast}
               disabled={isAnimating || drawnNumbers.length === 0}
@@ -335,7 +341,7 @@ export default function App() {
               <button
                 key={num}
                 onClick={() => toggleNumber(num)}
-                className="flex items-center justify-center text-xs sm:text-sm md:text-base font-bold rounded-md transition-all border"
+                className="flex items-center justify-center text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold rounded-md transition-all border p-0.5 overflow-hidden"
                 style={{
                   backgroundColor: isPreview ? colors.preview : (isDrawn ? colors.selected : colors.cell),
                   borderColor: isPreview || isCurrent ? colors.outline : 'transparent',
@@ -345,7 +351,7 @@ export default function App() {
                   zIndex: isPreview ? 10 : 1,
                 }}
               >
-                {getDisplayValue(num)}
+                <span className="leading-none select-none">{getDisplayValue(num)}</span>
               </button>
             );
           })}
@@ -353,26 +359,26 @@ export default function App() {
       </main>
 
       {/* Print View - Only visible when printing */}
-      <div className="hidden print:block p-8">
-        <div className="flex flex-col gap-8">
+      <div className="hidden print:block p-4">
+        <div className="flex flex-col gap-12">
           {Array.from({ length: printCount }).map((_, pageIdx) => (
-            <div key={pageIdx} className="flex flex-col gap-4 break-after-page">
+            <div key={pageIdx} className="flex flex-col gap-6 break-after-page">
               {Array.from({ length: 3 }).map((_, cardIdx) => {
                 const grid = generateBankoplad();
                 return (
-                  <div key={cardIdx} className="border-2 border-black p-2 rounded-lg">
-                    <div className="flex justify-between items-center mb-1 px-2">
-                      <span className="text-xs font-bold uppercase opacity-50">Skolechips Klassebingo</span>
-                      <span className="text-xs font-mono">#{pageIdx * 3 + cardIdx + 1}</span>
+                  <div key={cardIdx} className="border-[3px] border-black p-3 rounded-xl bg-white">
+                    <div className="flex justify-between items-center mb-2 px-2">
+                      <span className="text-sm font-bold uppercase opacity-60 tracking-widest">Skolechips Klassebingo</span>
+                      <span className="text-sm font-mono font-bold">PLADE #{pageIdx * 3 + cardIdx + 1}</span>
                     </div>
-                    <div className="grid grid-cols-9 border-t border-l border-black">
+                    <div className="grid grid-cols-9 border-t-[3px] border-l-[3px] border-black">
                       {grid.map((row, r) => (
                         row.map((val, c) => (
                           <div 
                             key={`${r}-${c}`} 
-                            className="aspect-[4/3] border-r border-b border-black flex items-center justify-center text-2xl font-bold bg-white"
+                            className="aspect-[1.4/1] border-r-[3px] border-b-[3px] border-black flex items-center justify-center text-5xl font-bold bg-white overflow-hidden"
                           >
-                            {val !== null ? getDisplayValue(val) : ""}
+                            <span className="leading-none">{val !== null ? getDisplayValue(val) : ""}</span>
                           </div>
                         ))
                       ))}
@@ -388,7 +394,7 @@ export default function App() {
       {/* Print Modal */}
       <AnimatePresence>
         {showPrintModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 print:hidden">
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
