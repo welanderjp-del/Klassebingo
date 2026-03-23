@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+@layer base {
+  @media print {
+    @page {
+      margin: 1cm;
+    }
+    body {
+      background: white !important;
+      color: black !important;
+    }
+  }
+}
+
+.break-after-page {
+  break-after: page;
+}

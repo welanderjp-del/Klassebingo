@@ -1,3 +1,5 @@
+export type GameMode = "numbers" | "emojis" | "mixed";
+
 export interface BingoColors {
   background: string;
   text: string;

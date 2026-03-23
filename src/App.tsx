@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Settings, RotateCcw, Undo2, Play, X, RefreshCw } from "lucide-react";
-import { BingoColors } from "./types";
-import { DEFAULT_COLORS, STORAGE_KEY_COLORS } from "./constants";
+import { Settings, RotateCcw, Undo2, Play, X, RefreshCw, Printer, Hash, Smile, Shuffle } from "lucide-react";
+import { BingoColors, GameMode } from "./types";
+import { DEFAULT_COLORS, STORAGE_KEY_COLORS, BINGO_EMOJIS } from "./constants";
 
 export default function App() {
   // --- State ---
@@ -10,9 +10,12 @@ export default function App() {
   const [currentNumber, setCurrentNumber] = useState<number | null>(null);
   const [previousNumber, setPreviousNumber] = useState<number | null>(null);
   
+  const [gameMode, setGameMode] = useState<GameMode>("numbers");
   const [isAnimating, setIsAnimating] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [printCount, setPrintCount] = useState(3);
   
   const [colors, setColors] = useState<BingoColors>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_COLORS);
@@ -62,6 +65,18 @@ export default function App() {
     }
   };
 
+  const getDisplayValue = (num: number | null) => {
+    if (num === null) return "--";
+    if (gameMode === "emojis") return BINGO_EMOJIS[num - 1];
+    if (gameMode === "mixed") {
+      // Use a stable pseudo-random selection for mixed mode
+      // A simple hash to make it look random but stay stable for each number
+      const isEmoji = ((num * 17) + (num % 7)) % 2 === 0;
+      return isEmoji ? BINGO_EMOJIS[num - 1] : num;
+    }
+    return num;
+  };
+
   const drawNumber = useCallback(async () => {
     if (isAnimating) {
       stopRequestedRef.current = true;
@@ -84,7 +99,6 @@ export default function App() {
     const startTime = Date.now();
     let lastTick = startTime;
     
-    // Start at a random index
     let currentIndex = Math.floor(Math.random() * 90) + 1;
 
     const animate = async () => {
@@ -92,10 +106,8 @@ export default function App() {
       const elapsed = now - startTime;
       
       if (stopRequestedRef.current || elapsed >= duration) {
-        // Final selection
         let finalNum = currentIndex;
         
-        // 10% chance for extra move if not manually stopped
         if (!stopRequestedRef.current && Math.random() < 0.1) {
           setPreviewIndex(currentIndex);
           await new Promise(resolve => setTimeout(resolve, 1500));
@@ -105,7 +117,6 @@ export default function App() {
           finalNum = currentIndex;
         }
 
-        // If the final number is already drawn, find the next available one
         while (drawnNumbers.includes(finalNum)) {
           finalNum = (finalNum % 90) + 1;
         }
@@ -118,8 +129,6 @@ export default function App() {
         return;
       }
 
-      // Deacceleration logic: interval increases over time
-      // Ease out quad: t * (2 - t)
       const t = elapsed / duration;
       const easeOut = t * (2 - t);
       const baseInterval = 50;
@@ -148,37 +157,116 @@ export default function App() {
     setColors(DEFAULT_COLORS);
   };
 
+  // --- Bankoplad Generation ---
+  const generateBankoplad = () => {
+    const grid: (number | null)[][] = Array.from({ length: 3 }, () => Array(9).fill(null));
+    
+    // For each row, pick 5 columns to fill
+    for (let r = 0; r < 3; r++) {
+      const cols = Array.from({ length: 9 }, (_, i) => i);
+      const selectedCols = [];
+      for (let i = 0; i < 5; i++) {
+        const idx = Math.floor(Math.random() * cols.length);
+        selectedCols.push(cols.splice(idx, 1)[0]);
+      }
+      
+      selectedCols.forEach(c => {
+        // Range for column c: (c*10 + 1) to (c*10 + 10)
+        const min = c * 10 + 1;
+        const max = c * 10 + 10;
+        let num = Math.floor(Math.random() * (max - min + 1)) + min;
+        
+        // Ensure no duplicates in the same column across rows
+        while (grid.some(row => row[c] === num)) {
+          num = Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        grid[r][c] = num;
+      });
+    }
+
+    // Sort columns
+    for (let c = 0; c < 9; c++) {
+      const colValues = grid.map(row => row[c]).filter(v => v !== null) as number[];
+      colValues.sort((a, b) => a - b);
+      let valIdx = 0;
+      for (let r = 0; r < 3; r++) {
+        if (grid[r][c] !== null) {
+          grid[r][c] = colValues[valIdx++];
+        }
+      }
+    }
+
+    return grid;
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div 
-      className="h-screen w-screen font-sans transition-colors duration-300 flex flex-col overflow-hidden"
+      className="h-screen w-screen font-sans transition-colors duration-300 flex flex-col overflow-hidden print:h-auto print:w-auto print:overflow-visible"
       style={{ backgroundColor: colors.background, color: colors.text }}
     >
       {/* Header - Minimalist */}
-      <header className="px-6 py-3 flex justify-between items-center border-b border-black/5 shrink-0">
-        <a 
-          href="https://skolechips.dk" 
-          className="flex items-center gap-2 hover:opacity-70 transition-opacity"
-        >
-          <img 
-            src="https://res.cloudinary.com/dtw8jfk0k/image/upload/v1774287946/ikon_m2x8mj.png" 
-            alt="Skolechips Logo" 
-            className="h-7 w-auto"
-            referrerPolicy="no-referrer"
-          />
-          <h1 className="text-lg font-bold tracking-tight uppercase opacity-80">Klassebingo</h1>
-        </a>
+      <header className="px-6 py-3 flex justify-between items-center border-b border-black/5 shrink-0 print:hidden">
+        <div className="flex items-center gap-6">
+          <a 
+            href="https://skolechips.dk" 
+            className="flex items-center gap-2 hover:opacity-70 transition-opacity"
+          >
+            <img 
+              src="https://res.cloudinary.com/dtw8jfk0k/image/upload/v1774287946/ikon_m2x8mj.png" 
+              alt="Skolechips Logo" 
+              className="h-7 w-auto"
+              referrerPolicy="no-referrer"
+            />
+            <h1 className="text-lg font-bold tracking-tight uppercase opacity-80">Klassebingo</h1>
+          </a>
+
+          {/* Mode Selector */}
+          <div className="flex bg-black/5 p-1 rounded-lg gap-1">
+            <button
+              onClick={() => setGameMode("numbers")}
+              className={`px-3 py-1 rounded-md text-sm font-semibold flex items-center gap-2 transition-all ${gameMode === "numbers" ? "bg-white shadow-sm" : "opacity-50 hover:opacity-80"}`}
+            >
+              <Hash size={16} /> Tal
+            </button>
+            <button
+              onClick={() => setGameMode("emojis")}
+              className={`px-3 py-1 rounded-md text-sm font-semibold flex items-center gap-2 transition-all ${gameMode === "emojis" ? "bg-white shadow-sm" : "opacity-50 hover:opacity-80"}`}
+            >
+              <Smile size={16} /> Emojis
+            </button>
+            <button
+              onClick={() => setGameMode("mixed")}
+              className={`px-3 py-1 rounded-md text-sm font-semibold flex items-center gap-2 transition-all ${gameMode === "mixed" ? "bg-white shadow-sm" : "opacity-50 hover:opacity-80"}`}
+            >
+              <Shuffle size={16} /> Blandet
+            </button>
+          </div>
+        </div>
         
-        <button 
-          onClick={() => setShowSettings(!showSettings)}
-          className="p-1.5 rounded-full hover:bg-black/5 transition-colors"
-          title="Indstillinger"
-        >
-          <Settings size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setShowPrintModal(true)}
+            className="p-2 rounded-full hover:bg-black/5 transition-colors"
+            title="Print plader"
+          >
+            <Printer size={20} />
+          </button>
+          <button 
+            onClick={() => setShowSettings(!showSettings)}
+            className="p-2 rounded-full hover:bg-black/5 transition-colors"
+            title="Indstillinger"
+          >
+            <Settings size={20} />
+          </button>
+        </div>
       </header>
 
       {/* Main Content - Scaled to fit */}
-      <main className="flex-1 flex flex-col p-4 gap-4 min-h-0 overflow-hidden">
+      <main className="flex-1 flex flex-col p-4 gap-4 min-h-0 overflow-hidden print:hidden">
         
         {/* Top Section: Display & Controls */}
         <div className="flex items-center justify-between gap-8 px-4 shrink-0">
@@ -195,7 +283,7 @@ export default function App() {
             <div className="flex flex-col leading-tight">
               <span className="text-[10px] uppercase font-bold opacity-40">Forrige</span>
               <div className="text-2xl font-mono font-bold opacity-80">
-                {previousNumber || "--"}
+                {getDisplayValue(previousNumber)}
               </div>
             </div>
           </div>
@@ -208,7 +296,7 @@ export default function App() {
               animate={{ y: 0, opacity: 1 }}
               className="text-7xl font-black font-mono tracking-tighter"
             >
-              {currentNumber || "--"}
+              {getDisplayValue(currentNumber)}
             </motion.div>
           </div>
 
@@ -257,12 +345,100 @@ export default function App() {
                   zIndex: isPreview ? 10 : 1,
                 }}
               >
-                {num}
+                {getDisplayValue(num)}
               </button>
             );
           })}
         </div>
       </main>
+
+      {/* Print View - Only visible when printing */}
+      <div className="hidden print:block p-8">
+        <div className="flex flex-col gap-8">
+          {Array.from({ length: printCount }).map((_, pageIdx) => (
+            <div key={pageIdx} className="flex flex-col gap-4 break-after-page">
+              {Array.from({ length: 3 }).map((_, cardIdx) => {
+                const grid = generateBankoplad();
+                return (
+                  <div key={cardIdx} className="border-2 border-black p-2 rounded-lg">
+                    <div className="flex justify-between items-center mb-1 px-2">
+                      <span className="text-xs font-bold uppercase opacity-50">Skolechips Klassebingo</span>
+                      <span className="text-xs font-mono">#{pageIdx * 3 + cardIdx + 1}</span>
+                    </div>
+                    <div className="grid grid-cols-9 border-t border-l border-black">
+                      {grid.map((row, r) => (
+                        row.map((val, c) => (
+                          <div 
+                            key={`${r}-${c}`} 
+                            className="aspect-[4/3] border-r border-b border-black flex items-center justify-center text-2xl font-bold bg-white"
+                          >
+                            {val !== null ? getDisplayValue(val) : ""}
+                          </div>
+                        ))
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Print Modal */}
+      <AnimatePresence>
+        {showPrintModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col gap-6"
+              style={{ color: '#1e293b' }}
+            >
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Print Bingoplader</h2>
+                <button onClick={() => setShowPrintModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-bold opacity-60">Antal sider (3 plader pr. side)</label>
+                <div className="flex items-center gap-4">
+                  <input 
+                    type="range" 
+                    min="1" 
+                    max="20" 
+                    value={printCount}
+                    onChange={(e) => setPrintCount(parseInt(e.target.value))}
+                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                  />
+                  <span className="text-xl font-bold w-12 text-center">{printCount}</span>
+                </div>
+                <p className="text-xs opacity-50 italic">Dette vil generere {printCount * 3} unikke plader.</p>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-xl flex flex-col gap-2 border border-blue-100">
+                <p className="text-sm font-medium text-blue-800">
+                  Pladerne vil bruge den nuværende mode: <span className="font-bold uppercase">{gameMode === "numbers" ? "Tal" : gameMode === "emojis" ? "Emojis" : "Blandet"}</span>
+                </p>
+                <p className="text-xs text-blue-600">
+                  Hver plade er en klassisk bankoplade med 3 rækker og 9 kolonner.
+                </p>
+              </div>
+
+              <button
+                onClick={handlePrint}
+                className="w-full py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 bg-blue-500 text-white hover:bg-blue-600 transition-all active:scale-95 shadow-lg"
+              >
+                <Printer size={24} />
+                Start print
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Settings Panel */}
       <AnimatePresence>
@@ -271,7 +447,7 @@ export default function App() {
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            className="fixed inset-y-0 right-0 w-80 bg-white shadow-2xl z-50 p-6 flex flex-col gap-6"
+            className="fixed inset-y-0 right-0 w-80 bg-white shadow-2xl z-50 p-6 flex flex-col gap-6 print:hidden"
             style={{ color: '#1e293b' }}
           >
             <div className="flex justify-between items-center">
@@ -317,7 +493,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Footer */}
-      <footer className="p-4 text-center text-xs opacity-40">
+      <footer className="p-4 text-center text-xs opacity-40 print:hidden">
         &copy; {new Date().getFullYear()} Skolechips Klassebingo
       </footer>
     </div>
