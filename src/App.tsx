@@ -377,7 +377,7 @@ export default function App() {
                         row.map((val, c) => (
                           <div 
                             key={`${r}-${c}`} 
-                            className="aspect-[1.8/1] border-r-[4px] border-b-[4px] border-black flex items-center justify-center text-5xl font-bold bg-white overflow-hidden"
+                            className="aspect-[1.4/1] border-r-[4px] border-b-[4px] border-black flex items-center justify-center text-4xl font-bold bg-white overflow-hidden"
                           >
                             <span className="leading-none">{val !== null ? getDisplayValue(val) : ""}</span>
                           </div>
