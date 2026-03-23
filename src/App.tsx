@@ -358,26 +358,26 @@ export default function App() {
       </main>
 
       {/* Print View - Only visible when printing */}
-      <div className="hidden print:block p-4">
-        <div className="flex flex-col gap-12">
+      <div className="hidden print:block p-8">
+        <div className="flex flex-col gap-0">
           {Array.from({ length: Math.ceil(printCount / 4) }).map((_, pageIdx) => (
-            <div key={pageIdx} className="grid grid-cols-2 gap-x-6 gap-y-10 break-after-page min-h-screen content-start">
+            <div key={pageIdx} className="flex flex-col gap-6 break-after-page min-h-[100vh] justify-start">
               {Array.from({ length: 4 }).map((_, cardIdx) => {
                 const globalCardIdx = pageIdx * 4 + cardIdx;
                 if (globalCardIdx >= printCount) return null;
                 const grid = generateBankoplad();
                 return (
-                  <div key={cardIdx} className="border-[3px] border-black p-3 rounded-xl bg-white h-fit">
-                    <div className="flex justify-between items-center mb-2 px-2">
-                      <span className="text-[10px] font-bold uppercase opacity-60 tracking-widest">Skolechips Klassebingo</span>
-                      <span className="text-[10px] font-mono font-bold">PLADE #{globalCardIdx + 1}</span>
+                  <div key={cardIdx} className="border-[4px] border-black p-4 rounded-2xl bg-white">
+                    <div className="flex justify-between items-center mb-3 px-2">
+                      <span className="text-xs font-bold uppercase opacity-60 tracking-widest">Skolechips Klassebingo</span>
+                      <span className="text-xs font-mono font-bold">PLADE #{globalCardIdx + 1}</span>
                     </div>
-                    <div className="grid grid-cols-9 border-t-[3px] border-l-[3px] border-black">
+                    <div className="grid grid-cols-9 border-t-[4px] border-l-[4px] border-black">
                       {grid.map((row, r) => (
                         row.map((val, c) => (
                           <div 
                             key={`${r}-${c}`} 
-                            className="aspect-[1.4/1] border-r-[3px] border-b-[3px] border-black flex items-center justify-center text-4xl font-bold bg-white overflow-hidden"
+                            className="aspect-[1.8/1] border-r-[4px] border-b-[4px] border-black flex items-center justify-center text-5xl font-bold bg-white overflow-hidden"
                           >
                             <span className="leading-none">{val !== null ? getDisplayValue(val) : ""}</span>
                           </div>
