@@ -358,30 +358,32 @@ export default function App() {
       </main>
 
       {/* Print View - Only visible when printing */}
-      <div className="hidden print:block p-4">
+      <div className="hidden print:block">
         <div className="flex flex-col">
           {Array.from({ length: Math.ceil(printCount / 4) }).map((_, pageIdx) => (
             <div 
               key={pageIdx} 
-              className={`flex flex-col gap-4 justify-start ${pageIdx < Math.ceil(printCount / 4) - 1 ? "break-after-page" : ""}`}
-              style={{ height: "297mm", padding: "10mm 0" }} // Standard A4 height roughly
+              className={`flex flex-col gap-2 justify-between p-8 ${pageIdx < Math.ceil(printCount / 4) - 1 ? "break-after-page" : ""}`}
+              style={{ height: "297mm", boxSizing: "border-box" }}
             >
               {Array.from({ length: 4 }).map((_, cardIdx) => {
                 const globalCardIdx = pageIdx * 4 + cardIdx;
-                if (globalCardIdx >= printCount) return null;
+                if (globalCardIdx >= printCount) return (
+                  <div key={cardIdx} className="flex-1 invisible" />
+                );
                 const grid = generateBankoplad();
                 return (
-                  <div key={cardIdx} className="border-[2px] border-slate-400 p-4 rounded-2xl bg-white flex-1 flex flex-col justify-center">
-                    <div className="flex justify-between items-center mb-2 px-2">
+                  <div key={cardIdx} className="border-[3px] border-slate-400 p-3 rounded-xl bg-white flex-1 flex flex-col justify-center overflow-hidden">
+                    <div className="flex justify-between items-center mb-1 px-1">
                       <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Skolechips Klassebingo</span>
                       <span className="text-[10px] font-mono font-bold text-slate-500">PLADE #{globalCardIdx + 1}</span>
                     </div>
-                    <div className="grid grid-cols-9 border-t-[1px] border-l-[1px] border-slate-300">
+                    <div className="grid grid-cols-9 border-t-[2px] border-l-[2px] border-slate-300">
                       {grid.map((row, r) => (
                         row.map((val, c) => (
                           <div 
                             key={`${r}-${c}`} 
-                            className="aspect-[1.5/1] border-r-[1px] border-b-[1px] border-slate-300 flex items-center justify-center text-4xl font-bold bg-white overflow-hidden"
+                            className="aspect-[1.6/1] border-r-[2px] border-b-[2px] border-slate-300 flex items-center justify-center text-4xl font-bold bg-white overflow-hidden"
                           >
                             <span className="leading-none text-slate-800">{val !== null ? getDisplayValue(val) : ""}</span>
                           </div>
