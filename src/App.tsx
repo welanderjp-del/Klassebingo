@@ -15,7 +15,7 @@ export default function App() {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
-  const [printCount, setPrintCount] = useState(3);
+  const [printCount, setPrintCount] = useState(12);
   
   const [colors, setColors] = useState<BingoColors>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_COLORS);
@@ -69,9 +69,8 @@ export default function App() {
     if (num === null) return "--";
     if (gameMode === "emojis") return BINGO_EMOJIS[num - 1];
     if (gameMode === "mixed") {
-      // Use a stable pseudo-random selection for mixed mode
-      // A simple hash to make it look random but stay stable for each number
-      const isEmoji = ((num * 17) + (num % 7)) % 2 === 0;
+      const row = Math.floor((num - 1) / 10);
+      const isEmoji = row % 2 === 0 ? num % 2 !== 0 : num % 2 === 0;
       return isEmoji ? BINGO_EMOJIS[num - 1] : num;
     }
     return num;
@@ -361,22 +360,24 @@ export default function App() {
       {/* Print View - Only visible when printing */}
       <div className="hidden print:block p-4">
         <div className="flex flex-col gap-12">
-          {Array.from({ length: printCount }).map((_, pageIdx) => (
-            <div key={pageIdx} className="flex flex-col gap-6 break-after-page">
-              {Array.from({ length: 3 }).map((_, cardIdx) => {
+          {Array.from({ length: Math.ceil(printCount / 4) }).map((_, pageIdx) => (
+            <div key={pageIdx} className="grid grid-cols-2 gap-x-6 gap-y-10 break-after-page min-h-screen content-start">
+              {Array.from({ length: 4 }).map((_, cardIdx) => {
+                const globalCardIdx = pageIdx * 4 + cardIdx;
+                if (globalCardIdx >= printCount) return null;
                 const grid = generateBankoplad();
                 return (
-                  <div key={cardIdx} className="border-[3px] border-black p-3 rounded-xl bg-white">
+                  <div key={cardIdx} className="border-[3px] border-black p-3 rounded-xl bg-white h-fit">
                     <div className="flex justify-between items-center mb-2 px-2">
-                      <span className="text-sm font-bold uppercase opacity-60 tracking-widest">Skolechips Klassebingo</span>
-                      <span className="text-sm font-mono font-bold">PLADE #{pageIdx * 3 + cardIdx + 1}</span>
+                      <span className="text-[10px] font-bold uppercase opacity-60 tracking-widest">Skolechips Klassebingo</span>
+                      <span className="text-[10px] font-mono font-bold">PLADE #{globalCardIdx + 1}</span>
                     </div>
                     <div className="grid grid-cols-9 border-t-[3px] border-l-[3px] border-black">
                       {grid.map((row, r) => (
                         row.map((val, c) => (
                           <div 
                             key={`${r}-${c}`} 
-                            className="aspect-[1.4/1] border-r-[3px] border-b-[3px] border-black flex items-center justify-center text-5xl font-bold bg-white overflow-hidden"
+                            className="aspect-[1.4/1] border-r-[3px] border-b-[3px] border-black flex items-center justify-center text-4xl font-bold bg-white overflow-hidden"
                           >
                             <span className="leading-none">{val !== null ? getDisplayValue(val) : ""}</span>
                           </div>
@@ -410,19 +411,19 @@ export default function App() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-bold opacity-60">Antal sider (3 plader pr. side)</label>
+                <label className="text-sm font-bold opacity-60">Antal plader i alt</label>
                 <div className="flex items-center gap-4">
                   <input 
                     type="range" 
                     min="1" 
-                    max="20" 
+                    max="100" 
                     value={printCount}
                     onChange={(e) => setPrintCount(parseInt(e.target.value))}
                     className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   />
                   <span className="text-xl font-bold w-12 text-center">{printCount}</span>
                 </div>
-                <p className="text-xs opacity-50 italic">Dette vil generere {printCount * 3} unikke plader.</p>
+                <p className="text-xs opacity-50 italic">Dette vil fylde {Math.ceil(printCount / 4)} sider (4 plader pr. side).</p>
               </div>
 
               <div className="bg-blue-50 p-4 rounded-xl flex flex-col gap-2 border border-blue-100">
