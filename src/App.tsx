@@ -363,17 +363,15 @@ export default function App() {
           {Array.from({ length: Math.ceil(printCount / 4) }).map((_, pageIdx) => (
             <div 
               key={pageIdx} 
-              className={`flex flex-col gap-2 justify-between p-8 ${pageIdx < Math.ceil(printCount / 4) - 1 ? "break-after-page" : ""}`}
+              className={`flex flex-col gap-4 p-6 ${pageIdx < Math.ceil(printCount / 4) - 1 ? "break-after-page" : ""}`}
               style={{ height: "297mm", boxSizing: "border-box" }}
             >
               {Array.from({ length: 4 }).map((_, cardIdx) => {
                 const globalCardIdx = pageIdx * 4 + cardIdx;
-                if (globalCardIdx >= printCount) return (
-                  <div key={cardIdx} className="flex-1 invisible" />
-                );
+                if (globalCardIdx >= printCount) return null;
                 const grid = generateBankoplad();
                 return (
-                  <div key={cardIdx} className="border-[3px] border-slate-400 p-3 rounded-xl bg-white flex-1 flex flex-col justify-center overflow-hidden">
+                  <div key={cardIdx} className="border-[3px] border-slate-400 p-3 rounded-xl bg-white flex flex-col h-fit overflow-hidden">
                     <div className="flex justify-between items-center mb-1 px-1">
                       <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Skolechips Klassebingo</span>
                       <span className="text-[10px] font-mono font-bold text-slate-500">PLADE #{globalCardIdx + 1}</span>
@@ -383,7 +381,7 @@ export default function App() {
                         row.map((val, c) => (
                           <div 
                             key={`${r}-${c}`} 
-                            className="aspect-[1.6/1] border-r-[2px] border-b-[2px] border-slate-300 flex items-center justify-center text-4xl font-bold bg-white overflow-hidden"
+                            className="aspect-[1.4/1] border-r-[2px] border-b-[2px] border-slate-300 flex items-center justify-center text-4xl font-bold bg-white overflow-hidden"
                           >
                             <span className="leading-none text-slate-800">{val !== null ? getDisplayValue(val) : ""}</span>
                           </div>
