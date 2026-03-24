@@ -2,15 +2,53 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Settings, RotateCcw, Undo2, Play, X, RefreshCw, Printer, Hash, Smile, Shuffle } from "lucide-react";
 import { BingoColors, GameMode } from "./types";
-import { DEFAULT_COLORS, STORAGE_KEY_COLORS, BINGO_EMOJIS } from "./constants";
+import { DEFAULT_COLORS, STORAGE_KEY_COLORS, STORAGE_KEY_GAME_STATE, BINGO_EMOJIS } from "./constants";
 
 export default function App() {
   // --- State ---
-  const [drawnNumbers, setDrawnNumbers] = useState<number[]>([]);
-  const [currentNumber, setCurrentNumber] = useState<number | null>(null);
-  const [previousNumber, setPreviousNumber] = useState<number | null>(null);
+  const [drawnNumbers, setDrawnNumbers] = useState<number[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_GAME_STATE);
+    if (!saved) return [];
+    try {
+      const state = JSON.parse(saved);
+      return state.drawnNumbers || [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [currentNumber, setCurrentNumber] = useState<number | null>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_GAME_STATE);
+    if (!saved) return null;
+    try {
+      const state = JSON.parse(saved);
+      return state.currentNumber !== undefined ? state.currentNumber : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [previousNumber, setPreviousNumber] = useState<number | null>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_GAME_STATE);
+    if (!saved) return null;
+    try {
+      const state = JSON.parse(saved);
+      return state.previousNumber !== undefined ? state.previousNumber : null;
+    } catch {
+      return null;
+    }
+  });
   
-  const [gameMode, setGameMode] = useState<GameMode>("numbers");
+  const [gameMode, setGameMode] = useState<GameMode>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_GAME_STATE);
+    if (!saved) return "numbers";
+    try {
+      const state = JSON.parse(saved);
+      return state.gameMode || "numbers";
+    } catch {
+      return "numbers";
+    }
+  });
   const [isAnimating, setIsAnimating] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -31,6 +69,16 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY_COLORS, JSON.stringify(colors));
   }, [colors]);
 
+  useEffect(() => {
+    const gameState = {
+      drawnNumbers,
+      currentNumber,
+      previousNumber,
+      gameMode,
+    };
+    localStorage.setItem(STORAGE_KEY_GAME_STATE, JSON.stringify(gameState));
+  }, [drawnNumbers, currentNumber, previousNumber, gameMode]);
+
   // --- Logic ---
   const resetGame = () => {
     if (isAnimating) return;
@@ -38,6 +86,7 @@ export default function App() {
       setDrawnNumbers([]);
       setCurrentNumber(null);
       setPreviousNumber(null);
+      localStorage.removeItem(STORAGE_KEY_GAME_STATE);
     }
   };
 

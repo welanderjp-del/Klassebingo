@@ -10,6 +10,7 @@ export const DEFAULT_COLORS: BingoColors = {
 };
 
 export const STORAGE_KEY_COLORS = "skolechips_bingo_colors";
+export const STORAGE_KEY_GAME_STATE = "skolechips_bingo_state";
 
 export const BINGO_EMOJIS = [
   // --- DYR (30) ---
