@@ -363,8 +363,7 @@ export default function App() {
           {Array.from({ length: Math.ceil(printCount / 4) }).map((_, pageIdx) => (
             <div 
               key={pageIdx} 
-              className={`flex flex-col gap-4 p-6 ${pageIdx < Math.ceil(printCount / 4) - 1 ? "break-after-page" : ""}`}
-              style={{ height: "297mm", boxSizing: "border-box" }}
+              className={`flex flex-col gap-4 p-8 ${pageIdx < Math.ceil(printCount / 4) - 1 ? "break-after-page" : ""}`}
             >
               {Array.from({ length: 4 }).map((_, cardIdx) => {
                 const globalCardIdx = pageIdx * 4 + cardIdx;
@@ -381,7 +380,7 @@ export default function App() {
                         row.map((val, c) => (
                           <div 
                             key={`${r}-${c}`} 
-                            className="aspect-[1.4/1] border-r-[2px] border-b-[2px] border-slate-300 flex items-center justify-center text-4xl font-bold bg-white overflow-hidden"
+                            className="aspect-[1.25/1] border-r-[2px] border-b-[2px] border-slate-300 flex items-center justify-center text-4xl font-bold bg-white overflow-hidden"
                           >
                             <span className="leading-none text-slate-800">{val !== null ? getDisplayValue(val) : ""}</span>
                           </div>
