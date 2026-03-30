@@ -261,6 +261,7 @@ export default function App() {
         <div className="flex items-center gap-6">
           <a 
             href="https://skolechips.dk" 
+            target="_top"
             className="flex items-center gap-2 hover:opacity-70 transition-opacity"
           >
             <img 
